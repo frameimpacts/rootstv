@@ -66,7 +66,7 @@ export async function POST(request) {
             customer_name: decoded.name || 'Customer'
           },
           order_meta: {
-            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/status/${orderId}?order_token={order_token}`
+            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/status/${orderId}`
           }
         })
       });
