@@ -8,6 +8,7 @@ export default function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
@@ -42,6 +43,7 @@ export default function Register() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          phone: formData.phone,
           password: formData.password,
         }),
       });
@@ -113,6 +115,23 @@ export default function Register() {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 disabled={loading}
+              />
+            </div>
+            <div>
+              <label htmlFor="phone" className="sr-only">
+                Phone Number
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                required
+                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-700 bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
+                placeholder="Phone Number (e.g., 1234567890)"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                disabled={loading}
+                pattern="^\d{10}$"
               />
             </div>
             <div>

@@ -4,7 +4,7 @@ import pool from '@/lib/db';
 
 export async function POST(request) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, phone, password } = await request.json();
     
     const connection = await pool.getConnection();
     
@@ -25,10 +25,10 @@ export async function POST(request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user with phone number
     await connection.query(
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-      [name, email, hashedPassword]
+      'INSERT INTO users (name, email, phone, password) VALUES (?, ?, ?, ?)',
+      [name, email, phone, hashedPassword]
     );
 
     connection.release();

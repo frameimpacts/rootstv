@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
 
       // If status is still pending, verify with Cashfree
       if (orders[0].status === 'pending') {
-        const cashfreeResponse = await fetch(`https://sandbox.cashfree.com/pg/orders/${orderId}`, {
+        const cashfreeResponse = await fetch(`https://api.cashfree.com/pg/orders/${orderId}`, {
           headers: {
             'x-client-id': process.env.CASHFREE_APP_ID,
             'x-client-secret': process.env.CASHFREE_SECRET_KEY,

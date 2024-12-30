@@ -47,7 +47,7 @@ export async function POST(request) {
       );
 
       // Initialize Cashfree payment
-      const cashfreeResponse = await fetch('https://sandbox.cashfree.com/pg/orders', {
+      const cashfreeResponse = await fetch('https://api.cashfree.com/pg/orders', {
         method: 'POST',
         headers: {
           'x-client-id': process.env.CASHFREE_APP_ID,
@@ -66,7 +66,7 @@ export async function POST(request) {
             customer_name: decoded.name || 'Customer'
           },
           order_meta: {
-            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/status/${orderId}`
+            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/status/${orderId}?order_token={order_token}`
           }
         })
       });

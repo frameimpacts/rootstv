@@ -102,7 +102,7 @@ export default function ContentPage({ params }) {
             modalContainer.style.display = 'block';
             
             const cashfree = new window.Cashfree({
-              mode: "sandbox"
+              mode: "production"
             });
             
             const checkoutConfig = {

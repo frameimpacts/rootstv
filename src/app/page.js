@@ -122,7 +122,7 @@ export default function Home() {
                   priority={index === 0}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent">
-                  <div className="absolute bottom-0 left-0 p-4 sm:p-6 md:p-8 max-w-3xl">
+                  <div className="absolute bottom-0 left-0 p-4 sm:p-6 lg:p-8 max-w-3xl">
                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 md:mb-4">{content.title}</h1>
                     <p className="text-sm sm:text-base md:text-lg mb-4 md:mb-6 text-gray-200">{content.description}</p>
                     <div className="flex gap-4">
