@@ -25,29 +25,27 @@ export async function GET(request, { params }) {
 
     connection = await pool.getConnection();
     
-    // Simplified query to match working pattern
     const [contentDetails] = await connection.query(`
       SELECT 
         c.id,
-        COALESCE(AVG(r.rating), 0) as avg_rating,
+        c.title,
+        AVG(r.rating) as avg_rating,
         COUNT(DISTINCT r.id) as total_ratings,
-        COALESCE(ur.rating, 0) as user_rating,
-        CASE 
-          WHEN p.purchase_date >= DATE_SUB(NOW(), INTERVAL COALESCE(p.rental_duration, c.rental_duration) DAY) 
-          AND p.status = 'active' THEN true
-          ELSE false
-        END as is_rented,
-        TIMESTAMPDIFF(
-          SECOND,
-          NOW(),
-          DATE_ADD(p.purchase_date, INTERVAL COALESCE(p.rental_duration, c.rental_duration) DAY)
-        ) / 86400.0 as days_left
+        MAX(ur.rating) as user_rating,
+        MAX(p.status = 'active') as is_rented,
+        MAX(
+          TIMESTAMPDIFF(
+            SECOND,
+            NOW(),
+            DATE_ADD(p.purchase_date, INTERVAL COALESCE(p.rental_duration, c.rental_duration) DAY)
+          ) / 86400.0
+        ) as days_left
       FROM content c
       LEFT JOIN reviews r ON c.id = r.content_id
       LEFT JOIN reviews ur ON c.id = ur.content_id AND ur.user_id = ?
       LEFT JOIN purchases p ON c.id = p.content_id AND p.user_id = ? AND p.status = 'active'
       WHERE c.id = ?
-      GROUP BY c.id
+      GROUP BY c.id, c.title
     `, [userId, userId, params.id]);
 
     if (!contentDetails || !contentDetails.length) {
