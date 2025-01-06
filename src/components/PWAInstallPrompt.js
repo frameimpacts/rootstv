@@ -6,21 +6,22 @@ export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
   const handleInstall = useCallback(async () => {
-    console.log('handleInstall called');
+    console.log('handleInstall called', { deferredPrompt, env: process.env.NODE_ENV });
     
-    // For development testing, simulate install
     if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode - simulating install');
       toast.success('App installed successfully! (Development Mode)');
       return;
     }
 
     if (!deferredPrompt) {
-      toast.error('Installation not available');
+      console.log('No deferred prompt available');
+      toast.error('Installation not available. Please use a supported browser.');
       return;
     }
 
     try {
-      deferredPrompt.prompt();
+      await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log('Installation outcome:', outcome);
       
@@ -32,81 +33,34 @@ export default function PWAInstallPrompt() {
       }
     } catch (error) {
       console.error('Installation error:', error);
-      toast.error('Installation failed');
+      toast.error('Installation failed: ' + error.message);
     }
   }, [deferredPrompt]);
 
   useEffect(() => {
-    console.log('PWAInstallPrompt mounted');
+    const beforeInstallPromptHandler = (e) => {
+      console.log('beforeinstallprompt event fired');
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    const handleCustomInstallPrompt = () => {
+      console.log('Custom install prompt triggered');
+      handleInstall();
+    };
+
+    window.addEventListener('beforeinstallprompt', beforeInstallPromptHandler);
+    window.addEventListener('show-pwa-install-prompt', handleCustomInstallPrompt);
     
-    // For development, simulate the beforeinstallprompt event
-    if (process.env.NODE_ENV === 'development') {
-      setTimeout(() => {
-        toast((t) => (
-          <div className="flex items-center gap-4">
-            <div>
-              <p className="font-semibold">Install RootsTV App</p>
-              <p className="text-sm text-gray-400">Watch movies with better protection</p>
-            </div>
-            <button
-              onClick={() => {
-                handleInstall();
-                toast.dismiss(t.id);
-              }}
-              className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 rounded-md text-white"
-            >
-              Install
-            </button>
-          </div>
-        ), {
-          duration: 10000,
-          position: 'bottom-right',
-        });
-      }, 2000); // Show after 2 seconds
-    } else {
-      // Production code
-      const beforeInstallPromptHandler = (e) => {
-        console.log('beforeinstallprompt event fired');
-        e.preventDefault();
-        setDeferredPrompt(e);
-      };
-
-      window.addEventListener('beforeinstallprompt', beforeInstallPromptHandler);
-      return () => window.removeEventListener('beforeinstallprompt', beforeInstallPromptHandler);
+    // Debug log
+    if (!window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('App is not installed');
     }
-  }, [handleInstall]);
-
-  // For testing in development
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const testInstall = (e) => {
-        if (e.key === 'i' && e.ctrlKey) {
-          toast((t) => (
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="font-semibold">Install RootsTV App</p>
-                <p className="text-sm text-gray-400">Watch movies with better protection</p>
-              </div>
-              <button
-                onClick={() => {
-                  handleInstall();
-                  toast.dismiss(t.id);
-                }}
-                className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 rounded-md text-white"
-              >
-                Install
-              </button>
-            </div>
-          ), {
-            duration: 10000,
-            position: 'bottom-right',
-          });
-        }
-      };
-
-      window.addEventListener('keydown', testInstall);
-      return () => window.removeEventListener('keydown', testInstall);
-    }
+    
+    return () => {
+      window.removeEventListener('beforeinstallprompt', beforeInstallPromptHandler);
+      window.removeEventListener('show-pwa-install-prompt', handleCustomInstallPrompt);
+    };
   }, [handleInstall]);
 
   return null;

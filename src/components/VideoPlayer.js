@@ -28,6 +28,14 @@ export default function VideoPlayer({ url, isPurchased = false, isTrailer = fals
   const videoType = getVideoType(url);
 
   useEffect(() => {
+    // Check if running as PWA
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                        window.navigator.standalone ||
+                        document.referrer.includes('android-app://');
+    setIsPWA(isStandalone);
+  }, []);
+
+  useEffect(() => {
     const checkIfPWA = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isFromHomescreen = window.navigator.standalone;
