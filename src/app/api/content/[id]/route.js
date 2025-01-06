@@ -2,27 +2,36 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
 export async function GET(request, { params }) {
+  let connection;
   try {
-    const connection = await pool.getConnection();
-    const [rows] = await connection.query(
-      'SELECT * FROM content WHERE id = ?',
-      [params.id]
-    );
-    connection.release();
+    connection = await pool.getConnection();
+    const { id } = params;
 
-    if (rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Content not found' },
-        { status: 404 }
-      );
+    // Single query to get all needed data
+    const [result] = await connection.query(`
+      SELECT 
+        c.*,
+        COALESCE(AVG(r.rating), 0) as avg_rating,
+        COUNT(DISTINCT r.id) as total_ratings
+      FROM content c
+      LEFT JOIN reviews r ON c.id = r.content_id
+      WHERE c.id = ?
+      GROUP BY c.id
+    `, [id]);
+
+    if (!result.length) {
+      return Response.json({ error: 'Content not found' }, { status: 404 });
     }
 
-    return NextResponse.json(rows[0]);
+    return Response.json({
+      ...result[0],
+      rating: Number(result[0].avg_rating) || 0,
+      totalRatings: Number(result[0].total_ratings) || 0
+    });
   } catch (error) {
-    console.error('Database error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch content' },
-      { status: 500 }
-    );
+    console.error('Error:', error);
+    return Response.json({ error: 'Server error' }, { status: 500 });
+  } finally {
+    if (connection) connection.release();
   }
 } 

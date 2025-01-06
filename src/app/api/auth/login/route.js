@@ -52,6 +52,12 @@ export async function POST(request) {
       { expiresIn: '24h' }
     );
 
+    // Update last_login
+    await connection.query(
+      'UPDATE users SET last_login = NOW() WHERE email = ?',
+      [email]
+    );
+
     connection.release();
     
     console.log('Login successful for:', email); // Debug log

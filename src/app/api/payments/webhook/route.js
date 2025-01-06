@@ -15,30 +15,45 @@ export async function POST(request) {
 
     const connection = await pool.getConnection();
 
-    // Update order status
-    await connection.query(
-      'UPDATE orders SET status = ?, payment_id = ? WHERE order_id = ?',
-      [status, paymentId, orderId]
-    );
-
-    // If payment is successful, create a purchase record
-    if (status === 'success') {
-      const [orderDetails] = await connection.query(
-        'SELECT user_id, content_id, amount FROM orders WHERE order_id = ?',
-        [orderId]
+    try {
+      // Update order status
+      await connection.query(
+        'UPDATE orders SET status = ?, payment_id = ? WHERE order_id = ?',
+        [status, paymentId, orderId]
       );
 
-      if (orderDetails.length > 0) {
-        await connection.query(
-          'INSERT INTO purchases (user_id, content_id, amount) VALUES (?, ?, ?)',
-          [orderDetails[0].user_id, orderDetails[0].content_id, orderDetails[0].amount]
+      // If payment is successful, create a purchase record with active status
+      if (status === 'success') {
+        const [orderDetails] = await connection.query(
+          'SELECT user_id, content_id, amount, rental_duration FROM orders WHERE order_id = ?',
+          [orderId]
         );
-      }
-    }
 
-    connection.release();
-    
-    return NextResponse.json({ success: true });
+        if (orderDetails.length > 0) {
+          await connection.query(
+            `INSERT INTO purchases (
+              user_id, 
+              content_id, 
+              amount, 
+              rental_duration,
+              status,
+              purchase_date
+            ) VALUES (?, ?, ?, ?, ?, NOW())`,
+            [
+              orderDetails[0].user_id, 
+              orderDetails[0].content_id, 
+              orderDetails[0].amount,
+              orderDetails[0].rental_duration,
+              'active'
+            ]
+          );
+        }
+      }
+
+      return NextResponse.json({ success: true });
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     console.error('Webhook error:', error);
     return NextResponse.json(

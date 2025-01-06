@@ -42,8 +42,8 @@ export async function POST(request) {
 
       // Create order in database
       await connection.query(
-        'INSERT INTO orders (user_id, content_id, amount, status, order_id) VALUES (?, ?, ?, ?, ?)',
-        [decoded.userId, contentId, amount, 'pending', orderId]
+        'INSERT INTO orders (user_id, content_id, amount, status, order_id, rental_duration) VALUES (?, ?, ?, ?, ?, ?)',
+        [decoded.userId, contentId, amount, 'pending', orderId, content.rental_duration]
       );
 
       // Initialize Cashfree payment
@@ -66,6 +66,8 @@ export async function POST(request) {
             customer_name: decoded.name || 'Customer'
           },
           order_meta: {
+            content_id: contentId,
+            rental_duration: content.rental_duration,
             return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/status/${orderId}`
           }
         })

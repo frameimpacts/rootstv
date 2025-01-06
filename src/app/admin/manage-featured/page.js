@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '@/components/SessionProvider';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function ManageFeatured() {
   const { session } = useSession();
@@ -71,71 +72,90 @@ export default function ManageFeatured() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-red-500">{error}</p>
-        <button 
-          onClick={fetchContents}
-          className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-        >
-          Try Again
-        </button>
+      <div className="p-6">
+        <div className="bg-red-50 text-xs text-red-600 p-4 rounded-lg">
+          {error}
+          <button 
+            onClick={fetchContents}
+            className="ml-2 text-red-600 hover:text-red-700 underline"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8">Manage Featured Content</h1>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-sm font-medium text-gray-600 mb-1">Featured Content</h1>
+          <p className="text-xs text-gray-500">Manage featured and trending content</p>
+        </div>
+      </div>
       
-      <div className="grid gap-6">
-        {contents.map((content) => (
-          <div key={content.id} className="bg-gray-800 p-6 rounded-lg flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-lg">{content.title}</h3>
-              <p className="text-gray-400 text-sm">{content.type}</p>
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="grid divide-y divide-gray-200">
+          {contents.map((content) => (
+            <div key={content.id} className="p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0 w-12 h-12 relative rounded overflow-hidden">
+                  <Image
+                    src={content.thumbnail_url}
+                    alt={content.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700">{content.title}</h3>
+                  <p className="text-xs text-gray-500 capitalize">{content.type}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => updateContentStatus(content.id, 'featured')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+                    content.status === 'featured' 
+                      ? 'bg-red-50 text-red-600' 
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Featured
+                </button>
+                <button
+                  onClick={() => updateContentStatus(content.id, 'trending')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+                    content.status === 'trending' 
+                      ? 'bg-red-50 text-red-600' 
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Trending
+                </button>
+                <button
+                  onClick={() => updateContentStatus(content.id, 'normal')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+                    content.status === 'normal' 
+                      ? 'bg-red-50 text-red-600' 
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Normal
+                </button>
+              </div>
             </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => updateContentStatus(content.id, 'featured')}
-                className={`px-4 py-2 rounded ${
-                  content.status === 'featured' 
-                    ? 'bg-red-600 text-white' 
-                    : 'bg-gray-700 text-gray-300'
-                }`}
-              >
-                Featured
-              </button>
-              <button
-                onClick={() => updateContentStatus(content.id, 'trending')}
-                className={`px-4 py-2 rounded ${
-                  content.status === 'trending' 
-                    ? 'bg-red-600 text-white' 
-                    : 'bg-gray-700 text-gray-300'
-                }`}
-              >
-                Trending
-              </button>
-              <button
-                onClick={() => updateContentStatus(content.id, 'normal')}
-                className={`px-4 py-2 rounded ${
-                  content.status === 'normal' 
-                    ? 'bg-red-600 text-white' 
-                    : 'bg-gray-700 text-gray-300'
-                }`}
-              >
-                Normal
-              </button>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

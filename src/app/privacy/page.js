@@ -1,6 +1,6 @@
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#050d1a] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Privacy Policy</h1>
         <p className="text-gray-300 mb-8">Last updated: September, 2024</p>

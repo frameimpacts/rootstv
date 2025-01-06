@@ -5,8 +5,8 @@ import pool from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
 export async function GET(request, { params }) {
+  let connection;
   try {
-    // Try both auth methods
     const session = await getServerSession(authOptions);
     const token = request.headers.get('authorization')?.split(' ')[1];
     let userId;
@@ -19,48 +19,63 @@ export async function GET(request, { params }) {
     }
 
     if (!userId) {
-      console.log('No valid session or token found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('Checking purchase for user:', userId, 'content:', params.contentId);
-
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     
-    // First, let's check purchases table
-    const [purchases] = await connection.query(
-      'SELECT * FROM purchases WHERE user_id = ? AND content_id = ?',
-      [userId, params.contentId]
-    );
+    // Check purchases with status and expiry in a single query
+    const [result] = await connection.query(`
+      SELECT 
+        p.*,
+        c.rental_duration,
+        EXISTS (
+          SELECT 1 FROM orders o 
+          WHERE o.user_id = ? AND o.content_id = ? AND o.status = 'paid'
+        ) as has_pending_order,
+        CASE 
+          WHEN p.purchase_date >= DATE_SUB(NOW(), INTERVAL COALESCE(p.rental_duration, c.rental_duration) DAY) 
+          AND p.status = 'active' THEN true
+          ELSE false
+        END as is_active
+      FROM purchases p
+      JOIN content c ON p.content_id = c.id
+      WHERE p.user_id = ? AND p.content_id = ?
+      ORDER BY p.purchase_date DESC
+      LIMIT 1
+    `, [userId, params.contentId, userId, params.contentId]);
 
-    console.log('Found purchases:', purchases);
+    // Update expired status if needed
+    if (result.length > 0 && !result[0].is_active) {
+      await connection.query(
+        'UPDATE purchases SET status = ? WHERE id = ?',
+        ['expired', result[0].id]
+      );
+    }
 
-    // Then check orders table
-    const [orders] = await connection.query(
-      'SELECT * FROM orders WHERE user_id = ? AND content_id = ? AND status IN (?, ?)',
-      [userId, params.contentId, 'paid', 'success']
-    );
+    const hasActiveAccess = result.some(p => p.is_active);
 
-    console.log('Found orders:', orders);
-
-    const hasAccess = purchases.length > 0 || orders.length > 0;
-
-    connection.release();
-    
     return NextResponse.json({
-      purchased: hasAccess,
-      debug: {
-        userId: userId,
-        contentId: params.contentId,
-        hasPurchases: purchases.length > 0,
-        hasOrders: orders.length > 0
+      purchased: hasActiveAccess,
+      status: {
+        hasActivePurchase: result.some(p => p.is_active),
+        hasPendingOrder: result.some(p => p.has_pending_order),
+        isExpired: result.length > 0 && !result.some(p => p.is_active)
       }
     });
   } catch (error) {
     console.error('Purchase check error:', error);
     return NextResponse.json(
-      { error: 'Failed to check purchase status' },
+      { error: 'Failed to check purchase status', details: error.message },
       { status: 500 }
     );
+  } finally {
+    if (connection) {
+      try {
+        await connection.release();
+      } catch (err) {
+        console.error('Error releasing connection:', err);
+      }
+    }
   }
 }

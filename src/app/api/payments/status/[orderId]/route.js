@@ -9,7 +9,7 @@ export async function GET(request, { params }) {
     try {
       // First check local database
       const [orders] = await connection.query(
-        'SELECT status, payment_session_id FROM orders WHERE order_id = ?',
+        'SELECT status, payment_session_id, rental_duration FROM orders WHERE order_id = ?',
         [orderId]
       );
 
@@ -37,17 +37,30 @@ export async function GET(request, { params }) {
             [newStatus, orderId]
           );
 
-          // If payment successful, create purchase record
+          // If payment successful, create purchase record with active status
           if (newStatus === 'paid' || newStatus === 'success') {
             const [orderDetails] = await connection.query(
-              'SELECT user_id, content_id, amount FROM orders WHERE order_id = ?',
+              'SELECT user_id, content_id, amount, rental_duration FROM orders WHERE order_id = ?',
               [orderId]
             );
           
             if (orderDetails.length > 0) {
               await connection.query(
-                'INSERT INTO purchases (user_id, content_id, amount) VALUES (?, ?, ?)',
-                [orderDetails[0].user_id, orderDetails[0].content_id, orderDetails[0].amount]
+                `INSERT INTO purchases (
+                  user_id, 
+                  content_id, 
+                  amount, 
+                  rental_duration,
+                  status,
+                  purchase_date
+                ) VALUES (?, ?, ?, ?, ?, NOW())`,
+                [
+                  orderDetails[0].user_id, 
+                  orderDetails[0].content_id, 
+                  orderDetails[0].amount,
+                  orderDetails[0].rental_duration,
+                  'active'
+                ]
               );
             }
           }
